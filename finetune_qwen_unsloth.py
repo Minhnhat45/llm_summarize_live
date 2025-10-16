@@ -53,17 +53,35 @@ def parse_args():
 
 # ------------- Prompting -------------
 def build_chat(sample: Dict[str, str]) -> List[Dict[str, str]]:
-    """Create a Qwen-style chat list for tokenizer.apply_chat_template."""
-    instruction = (sample.get("instruction") or "").strip()
-    inp = (sample.get("input") or "").strip()
-    out = (sample.get("output") or sample.get("label") or "").strip()
+    """
+    Build chat messages list from ShareGPT-style JSONL:
+    {"conversations": [{"role": "system", "content": ...}, {"role": "user", ...}, {"role": "assistant", ...}]}
 
-    user_msg = instruction if not inp else f"{instruction}\n\nInput:\n{inp}"
-    return [
-        {"role": "system", "content": "You are a helpful assistant."},
-        {"role": "user", "content": user_msg},
-        {"role": "assistant", "content": out},
-    ]
+    Args:
+        sample: one JSON record
+        remove_think: if True, strip <think>...</think> sections
+
+    Returns:
+        List[Dict[role, content]]
+    """
+    messages = []
+    conv = sample.get("conversations", [])
+    for msg in conv:
+        role = msg.get("role", "").strip()
+        content = (msg.get("content") or "").strip()
+
+        # Skip empty content
+        if not content:
+            continue
+
+        messages.append({"role": role, "content": content})
+
+    # Sanity fallback: if dataset missing system role, add default
+    has_system = any(m["role"] == "system" for m in messages)
+    if not has_system:
+        messages.insert(0, {"role": "system", "content": "You are a helpful assistant."})
+
+    return messages
 
 def format_example(ex, tokenizer: AutoTokenizer) -> Dict[str, List[int]]:
     # Turn chat into a single LM sequence (labels shift handled by trainer)
@@ -137,27 +155,27 @@ def main():
         max_steps = -1
         num_train_epochs = args.epochs
 
-    training_args = TrainingArguments(
-        output_dir=args.output_dir,
-        per_device_train_batch_size=args.batch_size,
-        gradient_accumulation_steps=args.grad_accum,
-        learning_rate=args.lr,
-        warmup_ratio=args.warmup_ratio,
-        num_train_epochs=num_train_epochs,
-        max_steps=max_steps,
-        lr_scheduler_type="cosine",
-        logging_steps=args.logging_steps,
-        save_steps=args.save_steps,
-        save_total_limit=2,
-        bf16=args.bf16 and torch.cuda.is_available() and torch.cuda.get_device_capability(0)[0] >= 8,
-        fp16=not args.bf16,
-        optim="paged_adamw_8bit",          # 8-bit optimizer to save VRAM
-        gradient_checkpointing=True,
-        dataloader_pin_memory=True,
-        torch_compile=False,
-        report_to="none",
-        run_name="qwen_unsloth_lora",
-    )
+    # training_args = TrainingArguments(
+    #     output_dir=args.output_dir,
+    #     per_device_train_batch_size=args.batch_size,
+    #     gradient_accumulation_steps=args.grad_accum,
+    #     learning_rate=args.lr,
+    #     warmup_ratio=args.warmup_ratio,
+    #     num_train_epochs=num_train_epochs,
+    #     max_steps=max_steps,
+    #     lr_scheduler_type="cosine",
+    #     logging_steps=args.logging_steps,
+    #     save_steps=args.save_steps,
+    #     save_total_limit=2,
+    #     bf16=args.bf16 and torch.cuda.is_available() and torch.cuda.get_device_capability(0)[0] >= 8,
+    #     fp16=not args.bf16,
+    #     optim="paged_adamw_8bit",          # 8-bit optimizer to save VRAM
+    #     gradient_checkpointing=True,
+    #     dataloader_pin_memory=True,
+    #     torch_compile=False,
+    #     report_to="none",
+    #     run_name="qwen_unsloth_lora",
+    # )
 
     # TRL SFT Trainer
     trainer = SFTTrainer(
@@ -178,6 +196,9 @@ def main():
             weight_decay = 0.01,
             lr_scheduler_type = "linear",
             seed = 4545,
+            save_strategy="steps",
+            save_steps=1000,                 # ✅ save every 500 steps
+            save_total_limit=3,
             report_to = "wandb", # Use this for WandB etc
             #logging_steps=10,
             run_name="qwen3-8b-16-10-sft",
