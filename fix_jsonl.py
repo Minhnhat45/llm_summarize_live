@@ -1,9 +1,9 @@
 import json
-
-fixed_out = "train_data_09_10_2025_fixed.jsonl"
-with open("train_data_09_10_2025_norm.jsonl", "r", encoding="utf-8") as f_in, \
+import tqdm
+fixed_out = "train_data_16_10_2025_fixed.jsonl"
+with open("train_data_16_10_2025_norm.jsonl", "r", encoding="utf-8") as f_in, \
      open(fixed_out, "w", encoding="utf-8") as f_out:
-    for line in f_in:
+    for line in tqdm.tqdm(f_in):
         line = line.strip()
         if not line:
             continue

@@ -83,6 +83,10 @@ def multitask_instruction_prompt(lead, content, title, style):
     [STYLE={style}][TASK=title]
     Bạn là tổng biên tập báo chí dày dạn kinh nghiệm. 
     Nhiệm vụ của bạn là viết một tiêu đề ngắn gọn, hấp dẫn, đúng phong cách báo chí chuyên nghiệp và dễ hiểu với độc giả đại chúng, dựa trên phần *lead* và *content* được cung cấp.
+    Title cần:
+    - Chỉ in ra tiêu đề, KHÔNG kèm giải thích.
+    - Ngắn gọn dưới 15 từ, dễ hiểu, rõ ràng.
+    - Không sử dụng '?', '!', ';', '"'
     """.strip()
 
     prompt_lead = f"""
@@ -93,7 +97,7 @@ def multitask_instruction_prompt(lead, content, title, style):
     - Tóm tắt ý chính quan trọng nhất của bài viết.  
     - Gây tò mò, thu hút độc giả tiếp tục đọc.  
     - Viết theo phong cách báo chí chuyên nghiệp, dễ hiểu với độc giả đại chúng.  
-    - Độ dài khoảng 1–3 câu.
+    - Độ dài khoảng từ 1 đến 3 câu.
     """.strip()
 
     sharegpt_payload = {
@@ -104,10 +108,6 @@ def multitask_instruction_prompt(lead, content, title, style):
                         "Hãy viết MỘT tiêu đề duy nhất dựa trên LEAD và CONTENT sau.\n\n"
                         f"LEAD:\n{lead}\n\n"
                         f"CONTENT:\n{content}\n\n"
-                        "YÊU CẦU ĐẦU RA:\n"
-                        "- Chỉ in ra tiêu đề, KHÔNG kèm giải thích.\n"
-                        "- Ngắn gọn, rõ ràng, dễ hiểu; tránh giật tít phản cảm.\n"
-                        "- Ưu tiên < 14 từ nếu có thể."
                     ),
                 },
                 {"role": "assistant", "content": f"{title}"}
@@ -117,12 +117,8 @@ def multitask_instruction_prompt(lead, content, title, style):
             "conversations": [
                 {"role": "system", "content": prompt_lead},
                 {"role": "user", "content": (
-                        "Tạo LEAD 1–3 câu cho bài viết dựa trên CONTENT sau.\n\n"
+                        "Tạo LEAD với độ dài từ 1 đến 3 câu cho bài viết dựa trên CONTENT sau.\n\n"
                         f"CONTENT:\n{content}\n\n"
-                        "YÊU CẦU ĐẦU RA:\n"
-                        "- Súc tích, hấp dẫn, tóm tắt ý chính quan trọng nhất.\n"
-                        "- Gợi mở, khuyến khích độc giả đọc tiếp.\n"
-                        "- Không dùng emoji/hashtag; không bịa số liệu."
                     ),
                 },
                 {"role": "assistant", "content": f"{lead}"}
@@ -188,7 +184,7 @@ def handle_categories(data_path, style):
     print(f"Done. Wrote {n_ok} samples to {out_jsonl}. Skipped {n_skip} empty content rows.")
 
 if __name__ == "__main__":
-    out_jsonl = "./train_data_09_10_2025.jsonl"
+    out_jsonl = "./train_data_16_10_2025.jsonl"
     if os.path.exists(out_jsonl):
         os.remove(out_jsonl)
     
@@ -197,17 +193,20 @@ if __name__ == "__main__":
 
     handle_categories("./doi song.xlsx", "đời sống")
     handle_categories("./du lich.xlsx", "du lịch")
+    handle_categories("./KHCN.xlsx", "khoa học công nghệ")
+    
+    
     
     # prepare general instruction prompt
-    with open("./ecommerce_alpaca_pretty.json", "r", encoding="utf8") as f:
-        ecommerce_data = json.load(f)
-    count_instructions = 0
-    for sample in ecommerce_data:
-        if "đoạn văn" in sample["instruction"].strip().lower():
-            sharegpt_sample = general_instruction_prompt(instruction=sample["instruction"], output=sample["output"])
-            # print(sharegpt_sample["title"]["messages"])
-            # print(sharegpt_sample["title"]["messages"])
-            # print("-----"*10)
-            append_jsonl(out_jsonl, sharegpt_sample)
-            count_instructions += 1
-    print(f"Total general instructions: {count_instructions}")
+    # with open("./ecommerce_alpaca_pretty.json", "r", encoding="utf8") as f:
+    #     ecommerce_data = json.load(f)
+    # count_instructions = 0
+    # for sample in ecommerce_data:
+    #     if "đoạn văn" in sample["instruction"].strip().lower():
+    #         sharegpt_sample = general_instruction_prompt(instruction=sample["instruction"], output=sample["output"])
+    #         # print(sharegpt_sample["title"]["messages"])
+    #         # print(sharegpt_sample["title"]["messages"])
+    #         # print("-----"*10)
+    #         append_jsonl(out_jsonl, sharegpt_sample)
+    #         count_instructions += 1
+    # print(f"Total general instructions: {count_instructions}")
