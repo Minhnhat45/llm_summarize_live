@@ -7,11 +7,12 @@ import multiprocessing as mp
 from typing import Dict, Iterable, Iterator, List, Tuple
 from tqdm import tqdm
 from transformers import AutoTokenizer
-
+import os
 DEFAULT_DATA_PATH = "./ecommerce_alpaca_pretty.json"
 DEFAULT_QWEN_MODEL = "Qwen/Qwen3-8B"
 
-access_token = "hf_"
+access_token = os.getenv("HF_TOKEN")
+
 
 _tokenizer: AutoTokenizer | None = None
 
@@ -44,7 +45,7 @@ if __name__ == "__main__":
             all_sample += contents["role"] + ": " + contents["content"] + "\n"
         instructions.append(all_sample)
     
-    with mp.Pool(processes=10, initializer=_init_tokenizer, initargs=(DEFAULT_QWEN_MODEL, access_token)) as pool:
+    with mp.Pool(processes=14, initializer=_init_tokenizer, initargs=(DEFAULT_QWEN_MODEL, access_token)) as pool:
         token_length_list = list(
             tqdm(pool.imap(count_qwen_tokens, instructions), total=len(instructions))
         )
