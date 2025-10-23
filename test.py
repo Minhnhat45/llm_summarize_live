@@ -1,16 +1,43 @@
-import os
 
-style = "KHCN"
+from typing import Dict, List
+from datasets import load_dataset
 
-prompt_lead = f"""
-[STYLE={style}][TASK=lead]
-Bạn là tổng biên tập báo chí dày dạn kinh nghiệm. 
-Nhiệm vụ của bạn là viết một đoạn *lead* ngắn gọn, súc tích và hấp dẫn dựa trên phần *content* được cung cấp. 
-Lead cần:
-- Tóm tắt ý chính quan trọng nhất của bài viết.  
-- Gây tò mò, thu hút độc giả tiếp tục đọc.  
-- Viết theo phong cách báo chí chuyên nghiệp, dễ hiểu với độc giả đại chúng.  
-- Độ dài khoảng 1–3 câu.
-""".strip()
 
-print(prompt_lead)
+def build_chat(sample: Dict[str, str]) -> List[Dict[str, str]]:
+    """
+    Build chat messages list from ShareGPT-style JSONL:
+    {"conversations": [{"role": "system", "content": ...}, {"role": "user", ...}, {"role": "assistant", ...}]}
+
+    Args:
+        sample: one JSON record
+        remove_think: if True, strip <think>...</think> sections
+
+    Returns:
+        List[Dict[role, content]]
+    """
+    messages = []
+    conv = sample.get("conversations", [])
+    for msg in conv:
+        role = msg.get("role", "").strip()
+        content = (msg.get("content") or "").strip()
+
+        # Skip empty content
+        if not content:
+            continue
+
+        messages.append({"role": role, "content": content})
+
+    # Sanity fallback: if dataset missing system role, add default
+    has_system = any(m["role"] == "system" for m in messages)
+    if not has_system:
+        messages.insert(0, {"role": "system", "content": "You are a helpful assistant."})
+
+    return messages
+
+raw = load_dataset("json", data_files={"train": "./train_data_16_10_2025_fixed.jsonl"})
+ds_train = raw["train"]
+
+print(ds_train[1])
+msgs = build_chat(ds_train[1])
+for m in msgs:
+    print(m)
