@@ -16,8 +16,8 @@ TOP_P = 0.9
 MAX_TOKENS = 4096
 # Backoff between requests (seconds) in case the endpoint needs pacing
 SLEEP_BETWEEN_CALLS = 0.2
-INPUT_CSV = "/mnt/data/test_articles.csv"          # change if needed
-OUTPUT_CSV = "/mnt/data/test_articles_outputs.csv" # change if needed
+INPUT_CSV = "./test_articles.csv"          # change if needed
+OUTPUT_CSV = "./test_articles_outputs.csv" # change if needed
 # ==============================
 
 
