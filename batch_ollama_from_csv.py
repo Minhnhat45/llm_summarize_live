@@ -11,13 +11,14 @@ from typing import Dict, Any
 # ======== FIXED CONFIG ========
 MODEL = "qwen3-8b-5k-quant-8-2:latest"
 URL = "http://157.10.188.151:11434/v1/chat/completions"
-TEMPERATURE = 0.6
+TEMPERATURE_LEAD = 0.5
+TEMPERATURE_TITLE = 0.7
 TOP_P = 0.9
 MAX_TOKENS = 4096
 # Backoff between requests (seconds) in case the endpoint needs pacing
 SLEEP_BETWEEN_CALLS = 0.2
 INPUT_CSV = "./test_articles.csv"          # change if needed
-OUTPUT_CSV = "./test_articles_outputs.csv" # change if needed
+OUTPUT_CSV = "./test_articles_outputs_lead_0.5_title_0.7.csv" # change if needed
 # ==============================
 
 
@@ -115,7 +116,7 @@ def main():
         up_lead = build_user_prompt_for_lead(content=content)
 
         try:
-            resp_lead = post_chat(URL, MODEL, sp_lead, up_lead, TEMPERATURE, TOP_P, MAX_TOKENS)
+            resp_lead = post_chat(URL, MODEL, sp_lead, up_lead, TEMPERATURE_LEAD, TOP_P, MAX_TOKENS)
             output_lead = extract_text(resp_lead).strip()
         except Exception as e:
             output_lead = f"[ERROR generating lead: {e}]"
@@ -127,7 +128,7 @@ def main():
         up_title = build_user_prompt_for_title(lead=output_lead, content=content)
 
         try:
-            resp_title = post_chat(URL, MODEL, sp_title, up_title, TEMPERATURE, TOP_P, MAX_TOKENS)
+            resp_title = post_chat(URL, MODEL, sp_title, up_title, TEMPERATURE_TITLE, TOP_P, MAX_TOKENS)
             output_title = extract_text(resp_title).strip()
         except Exception as e:
             output_title = f"[ERROR generating title: {e}]"
