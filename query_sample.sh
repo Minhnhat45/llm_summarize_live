@@ -1,6 +1,6 @@
 #!/bin/bash
 
-MODEL="qwen3-8b-quant-8-2:latest"
+MODEL="qwen3-8b-5k-quant-8-2:latest"
 URL="http://157.10.188.151:11434/v1/chat/completions"
 
 # TASK can be: title | lead

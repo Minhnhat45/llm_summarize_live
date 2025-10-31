@@ -50,6 +50,7 @@ if __name__ == "__main__":
             tqdm(pool.imap(count_qwen_tokens, instructions), total=len(instructions))
         )
     # print(token_length_list)
+    print(f"Total Tokens: {sum(token_length_list)}")
     avg_token_length = int(sum(token_length_list) / len(token_length_list))
     print(f"Average token length: {avg_token_length}")
     print(f"Max token length: {max(token_length_list)}")
